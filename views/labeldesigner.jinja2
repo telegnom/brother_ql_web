@@ -28,10 +28,10 @@
               </select>
               <label for="orientation" style="margin-top: 10px; margin-bottom: 0">Label Orientation:</label>
               <div class="radio" style="margin-top: 5px;">
-                <label><input type="radio" onchange="preview()" name="orientation" value="standard" {% if default_orientation == 'standard' %}checked{% endif %}>Standard</label>
+                <label><input type="radio" onchange="preview()" name="orientation" value="standard" {% if label['DEFAULT_ORIENTATION'] == 'standard' %}checked{% endif %}>Standard</label>
               </div>
               <div class="radio">
-                <label><input type="radio" onchange="preview()" name="orientation" value="rotated" {% if default_orientation == 'rotated' %}checked{% endif %}>Rotated</label>
+                <label><input type="radio" onchange="preview()" name="orientation" value="rotated" {% if label['DEFAULT_ORIENTATION'] == 'rotated' %}checked{% endif %}>Rotated</label>
               </div>
               </div> <!-- class="chooser panel-body" -->
             </div>
@@ -51,22 +51,22 @@
               <select class="form-control" id="fontFamily" onChange="preview()">
                 {% for font_family_name in font_family_names %}
                   {% for font_style in fonts[font_family_name].keys() %}
-                    <option>{{font_family_name}} ({{ font_style }})</option>
+                    <option {% if label['DEFAULT_FONT']['family'] == font_family_name and label['DEFAULT_FONT']['style'] == font_style %} selected {% endif %}>{{font_family_name}} ({{ font_style }})</>
                   {% endfor %}
                 {% endfor %}
               </select>
-              <label for="fontSize" >Font Size:</label>
+              <label for="fontSize">Font Size:</label>
               <input id="fontSize" class="form-control" type="number" min="1" value="{{ label['DEFAULT_FONT_SIZE'] }}" onChange="preview()" required>
               <label for="fontAlign" class="control-label input-group">Font Alignment:</label>
               <div class="btn-group" data-toggle="buttons">
-                  <label class="btn btn-default">
-                      <input type="radio" name="fontAlign" onchange="preview()" value="left" aria-label="Left Align"><span class="glyphicon glyphicon-align-left" aria-hidden="true"></span>
+                  <label class="btn btn-default {% if label['DEFAULT_ALIGNMENT'] == "left" %} active {% endif %}>">
+                      <input type="radio" name="fontAlign" onchange="preview()" value="left" aria-label="Left Align" {% if label['DEFAULT_ALIGNMENT'] == "left" %} checked {% endif %}><span class="glyphicon glyphicon-align-left" aria-hidden="true"></span>
                   </label>
-                  <label class="btn btn-default active">
-                      <input type="radio" name="fontAlign" onchange="preview()" value="center" aria-label="Center Align" checked=""><span class="glyphicon glyphicon-align-center" aria-hidden="true"></span>
+                  <label class="btn btn-default {% if label['DEFAULT_ALIGNMENT'] == "center" %} active {% endif %}>">
+                      <input type="radio" name="fontAlign" onchange="preview()" value="center" aria-label="Center Align" {% if label['DEFAULT_ALIGNMENT'] == "center" %} checked {% endif %}><span class="glyphicon glyphicon-align-center" aria-hidden="true"></span>
                   </label>
-                  <label class="btn btn-default">
-                      <input type="radio" name="fontAlign" onchange="preview()" value="right" aria-label="Right Align"><span class="glyphicon glyphicon-align-right" aria-hidden="true"></span>
+                  <label class="btn btn-default {% if label['DEFAULT_ALIGNMENT'] == "right" %} active {% endif %}>">
+                      <input type="radio" name="fontAlign" onchange="preview()" value="right" aria-label="Right Align" {% if label['DEFAULT_ALIGNMENT'] == "right" %} checked {% endif %}><span class="glyphicon glyphicon-align-right" aria-hidden="true"></span>
                   </label>
               </div>
               </div> <!-- class="chooser panel-body" -->
@@ -85,19 +85,19 @@
               <div class="chooser panel-body">
               <label for="marginTop">Margin Top:</label>
               <div class="input-group marginsTopBottom">
-                <input id="marginTop" class="form-control" type="number" min="0" max="200" value="24" onChange="preview()" required>    <span class="input-group-addon">%</span>
+                <input id="marginTop" class="form-control" type="number" min="0" max="200" value="{{ label['DEFAULT_MARGINS']['top']|float }}" onChange="preview()" required>    <span class="input-group-addon">%</span>
               </div>
               <label for="marginBottom">Margin Bottom:</label>
               <div class="input-group marginsTopBottom">
-                <input id="marginBottom" class="form-control" type="number" min="0" max="200" value="45" onChange="preview()" required> <span class="input-group-addon">%</span>
+                <input id="marginBottom" class="form-control" type="number" min="0" max="200" value="{{ label['DEFAULT_MARGINS']['bottom']|float }}" onChange="preview()" required> <span class="input-group-addon">%</span>
               </div>
               <label for="marginLeft">Margin Left:</label>
               <div class="input-group marginsLeftRight">
-                <input id="marginLeft" class="form-control" type="number" min="0" max="200" value="35" onChange="preview()" required>   <span class="input-group-addon">%</span>
+                <input id="marginLeft" class="form-control" type="number" min="0" max="200" value="{{ label['DEFAULT_MARGINS']['left']|float }}" onChange="preview()" required>   <span class="input-group-addon">%</span>
               </div>
               <label for="marginRight">Margin Right:</label>
               <div class="input-group marginsLeftRight">
-                <input id="marginRight" class="form-control" type="number" min="0" max="200" value="35" onChange="preview()" required>  <span class="input-group-addon">%</span>
+                <input id="marginRight" class="form-control" type="number" min="0" max="200" value="{{ label['DEFAULT_MARGINS']['right']|float }}" onChange="preview()" required>  <span class="input-group-addon">%</span>
               </div>
               </div> <!-- class="chooser panel-body" -->
             </div>
