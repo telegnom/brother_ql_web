@@ -171,8 +171,10 @@ function preview() {
   }
   if ($('input[name=labeltype]:checked').val() == 'qrcode') {
     $("#collapse2").parent().fadeOut();
+    $("#collapse3").parent().fadeOut();
   } else {
     $("#collapse2").parent().fadeIn();
+    $("#collapse3").parent().fadeIn();
   }
   $.ajax({
     type:        'POST',
