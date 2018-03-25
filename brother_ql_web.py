@@ -10,6 +10,8 @@ from io import BytesIO
 from bottle import run, route, get, post, response, request, jinja2_view as view, static_file, redirect
 from PIL import Image, ImageDraw, ImageFont
 
+import qrcode
+
 from brother_ql.devicedependent import models, label_type_specs, label_sizes
 from brother_ql.devicedependent import ENDLESS_LABEL, DIE_CUT_LABEL, ROUND_DIE_CUT_LABEL
 from brother_ql import BrotherQLRaster, create_label
@@ -55,6 +57,7 @@ def get_label_context(request):
     font_family = d.get('font_family').rpartition('(')[0].strip()
     font_style  = d.get('font_family').rpartition('(')[2].rstrip(')')
     context = {
+      'type':          d.get('labeltype', "text"),
       'text':          d.get('text', None),
       'font_size': int(d.get('font_size', 100)),
       'font_family':   font_family,
@@ -102,44 +105,70 @@ def get_label_context(request):
     return context
 
 def create_label_im(text, **kwargs):
-    label_type = kwargs['kind']
-    im_font = ImageFont.truetype(kwargs['font_path'], kwargs['font_size'])
-    im = Image.new('L', (20, 20), 'white')
-    draw = ImageDraw.Draw(im)
-    # workaround for a bug in multiline_textsize()
-    # when there are empty lines in the text:
-    lines = []
-    for line in text.split('\n'):
-        if line == '': line = ' '
-        lines.append(line)
-    text = '\n'.join(lines)
-    linesize = im_font.getsize(text)
-    textsize = draw.multiline_textsize(text, font=im_font)
+    endless_label = kwargs['kind'] in (ENDLESS_LABEL,)
     width, height = kwargs['width'], kwargs['height']
-    if kwargs['orientation'] == 'standard':
-        if label_type in (ENDLESS_LABEL,):
-            height = textsize[1] + kwargs['margin_top'] + kwargs['margin_bottom']
-    elif kwargs['orientation'] == 'rotated':
-        if label_type in (ENDLESS_LABEL,):
-            width = textsize[0] + kwargs['margin_left'] + kwargs['margin_right']
-    im = Image.new('L', (width, height), 'white')
-    draw = ImageDraw.Draw(im)
-    if kwargs['orientation'] == 'standard':
-        if label_type in (DIE_CUT_LABEL, ROUND_DIE_CUT_LABEL):
+    label_type = kwargs['type']
+    if label_type == "text":
+        im = Image.new('L', (20, 20), 'white')
+        im_font = ImageFont.truetype(kwargs['font_path'], kwargs['font_size'])
+        draw = ImageDraw.Draw(im)
+        # workaround for a bug in multiline_textsize()
+        # when there are empty lines in the text:
+        lines = []
+        for line in text.split('\n'):
+            if line == '': line = ' '
+            lines.append(line)
+        text = '\n'.join(lines)
+        linesize = im_font.getsize(text)
+        textsize = draw.multiline_textsize(text, font=im_font)
+        if kwargs['orientation'] == 'standard':
+            if endless_label:
+                height = textsize[1] + kwargs['margin_top'] + kwargs['margin_bottom']
+        elif kwargs['orientation'] == 'rotated':
+            if endless_label:
+                width = textsize[0] + kwargs['margin_left'] + kwargs['margin_right']
+        im = Image.new('L', (width, height), 'white')
+        draw = ImageDraw.Draw(im)
+        if kwargs['orientation'] == 'standard':
+            if not endless_label:
+                vertical_offset  = (height - textsize[1])//2
+                vertical_offset += (kwargs['margin_top'] - kwargs['margin_bottom'])//2
+            else:
+                vertical_offset = kwargs['margin_top']
+            horizontal_offset = max((width - textsize[0])//2, 0)
+        elif kwargs['orientation'] == 'rotated':
             vertical_offset  = (height - textsize[1])//2
             vertical_offset += (kwargs['margin_top'] - kwargs['margin_bottom'])//2
+            if not endless_label:
+                horizontal_offset = max((width - textsize[0])//2, 0)
+            else:
+                horizontal_offset = kwargs['margin_left']
+        offset = horizontal_offset, vertical_offset
+        draw.multiline_text(offset, text, (0), font=im_font, align=kwargs['align'])
+    elif label_type == "qrcode":
+        qr = qrcode.QRCode(version=1,
+                           error_correction=qrcode.constants.ERROR_CORRECT_L,
+                           box_size=1,
+                           border=4,)
+        qr.add_data(text)
+        qr.make(fit=True)
+
+        if width == 0 or height == 0:
+            size = max(width, height)
+            width = height = size
+            offset = (0, 0)
         else:
-            vertical_offset = kwargs['margin_top']
-        horizontal_offset = max((width - textsize[0])//2, 0)
-    elif kwargs['orientation'] == 'rotated':
-        vertical_offset  = (height - textsize[1])//2
-        vertical_offset += (kwargs['margin_top'] - kwargs['margin_bottom'])//2
-        if label_type in (DIE_CUT_LABEL, ROUND_DIE_CUT_LABEL):
-            horizontal_offset = max((width - textsize[0])//2, 0)
-        else:
-            horizontal_offset = kwargs['margin_left']
-    offset = horizontal_offset, vertical_offset
-    draw.multiline_text(offset, text, (0), font=im_font, align=kwargs['align'])
+            if width < height:
+                size = width
+                offset = (0, (height - width) // 2)
+            else:
+                size = height
+                offset = ((width - height) // 2, 0)
+
+        qr_im = qr.make_image(fill_color="black", back_color="white").resize((size, size))
+        im = Image.new('L', (width, height), 'white')
+        im.paste(qr_im.copy(), offset)
+
     return im
 
 @get('/api/preview/text')
