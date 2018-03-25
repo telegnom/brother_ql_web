@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """
 This is a web service to print labels on Brother QL label printers.
@@ -81,8 +81,8 @@ def get_label_context(request):
     def get_font_path(font_family_name, font_style_name):
         try:
             if font_family_name is None or font_style_name is None:
-                font_family_name = CONFIG['LABEL']['DEFAULT_FONTS']['family']
-                font_style_name =  CONFIG['LABEL']['DEFAULT_FONTS']['style']
+                font_family_name = CONFIG['LABEL']['DEFAULT_FONT']['family']
+                font_style_name =  CONFIG['LABEL']['DEFAULT_FONT']['style']
             font_path = FONTS[font_family_name][font_style_name]
         except KeyError:
             raise LookupError("Couln't find the font & style")
@@ -305,19 +305,12 @@ def main():
         sys.stderr.write("Not a single font was found on your system. Please install some or use the \"--font-folder\" argument.\n")
         sys.exit(2)
 
-    for font in CONFIG['LABEL']['DEFAULT_FONTS']:
-        try:
-            FONTS[font['family']][font['style']]
-            CONFIG['LABEL']['DEFAULT_FONTS'] = font
-            logger.debug("Selected the following default font: {}".format(font))
-            break
-        except: pass
-    if CONFIG['LABEL']['DEFAULT_FONTS'] is None:
+    if CONFIG['LABEL']['DEFAULT_FONT'] is None:
         sys.stderr.write('Could not find any of the default fonts. Choosing a random one.\n')
         family =  random.choice(list(FONTS.keys()))
         style =   random.choice(list(FONTS[family].keys()))
-        CONFIG['LABEL']['DEFAULT_FONTS'] = {'family': family, 'style': style}
-        sys.stderr.write('The default font is now set to: {family} ({style})\n'.format(**CONFIG['LABEL']['DEFAULT_FONTS']))
+        CONFIG['LABEL']['DEFAULT_FONT'] = {'family': family, 'style': style}
+        sys.stderr.write('The default font is now set to: {family} ({style})\n'.format(**CONFIG['LABEL']['DEFAULT_FONT']))
 
     run(host=CONFIG['SERVER']['HOST'], port=PORT, debug=DEBUG)
 
